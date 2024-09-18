@@ -1,4 +1,4 @@
-# team004 -- CacheFOUR
+# Team004 -- CacheFOUR
 
 ## Basic Information
 
@@ -19,10 +19,12 @@
 
 |   Info      |        Description     |
 | ----------- | ---------------------- |
-|  Title      |       ProjectTitle     |
+|  Title      |       UniCareers       |
 | System URL  |      link_to_system    |
 | Video Link  |      link_to_video     |
 
 ## Project Summary
 
-This is a summary of the project!
+Nowadays, there are so many apps or websites powered by AI for people to search jobs and contact with employers, such as LinkedIn and HandShake. However, most college students are still in the situation of exploring research interest and do not equipped with the knowledge about specific job options based on personal major and experience.
+
+Therefore, UniCareers is especially designed for college students to explore future job options based on personal interest and course selections. We plan to post two features, Career Tree Path and Course Matching Job Demo, with which students could be more aware of their academic-based status and career possibilities. In our project, students can freely select their favorite jobs and get a clear picture of their future career path and suggested course selections for certain specific job.
