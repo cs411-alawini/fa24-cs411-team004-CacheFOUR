@@ -92,7 +92,6 @@ router.post('/enroll-and-fetch-jobs', async (req: Request, res: Response) => {
   }
 });
 
-// 添加测试路由
 router.get('/test', (req: Request, res: Response) => {
     res.json({ message: 'FindJob routes are working!' });
 });
