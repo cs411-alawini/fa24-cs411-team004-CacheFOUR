@@ -7,7 +7,6 @@ import { Job } from '../models/Job'
 import { Positions } from "../models/Positions";
 import { SOC } from "../models/SOC"
 
-// (1) 验证用户并获取信息
 export async function validateAndGetUser(userId: number, name: string): Promise<UserAccount | null> {
     try {
         const [rows] = await pool.execute<RowDataPacket[]>(
@@ -26,7 +25,6 @@ export async function validateAndGetUser(userId: number, name: string): Promise<
     }
 }
 
-// (2) 用户信息的CRUD操作
 export async function createUser(user: Omit<UserAccount, "userId">): Promise<number> {
     if (!user.name || user.experience === undefined || !user.idealcom) {
         throw new Error("Missing required user fields");
@@ -115,7 +113,6 @@ export async function deleteUser(userId: number): Promise<void> {
 }
 
 
-// (3) 获取最大UserId
 export async function getMaxUserId(): Promise<number> {
     try {
         const [rows] = await pool.execute<RowDataPacket[]>('SELECT MAX(userId) as maxId FROM UserAccount');
@@ -126,7 +123,6 @@ export async function getMaxUserId(): Promise<number> {
     }
 }
 
-// (4) 获取所有行业
 export async function getAllIndustries(): Promise<string[]> {
     try {
         const [rows] = await pool.execute<RowDataPacket[]>('SELECT DISTINCT industry FROM Company WHERE industry IS NOT NULL');
@@ -137,7 +133,6 @@ export async function getAllIndustries(): Promise<string[]> {
     }
 }
 
-// (5) 根据行业查找公司
 export async function getCompaniesByIndustry(industry: string): Promise<Company[]> {
     try {
         const [rows] = await pool.execute<RowDataPacket[]>(
@@ -151,7 +146,6 @@ export async function getCompaniesByIndustry(industry: string): Promise<Company[
     }
 }
 
-// (6) 根据公司名称查找公司信息
 export async function getCompanyByName(name: string): Promise<Company | null> {
     try {
         const [rows] = await pool.execute<RowDataPacket[]>(
@@ -165,7 +159,6 @@ export async function getCompanyByName(name: string): Promise<Company | null> {
     }
 }
 
-// 获取所有公司
 export async function getAllCompanies(limit?: number, offset?: number): Promise<Company[]> {
     try {
         let query = 'SELECT * FROM Company';
@@ -198,12 +191,10 @@ CREATE PROCEDURE TagNameToJob(
     IN InputTagCode VARCHAR(255)
 )
 BEGIN
-    -- 更新用户的 TagCode
     UPDATE UserAccount
     SET TagCode = InputTagCode
     WHERE UserId = InputUserId;
 
-    -- 直接返回结果集
     SELECT 
         J.JobId,
         J.Role,
@@ -236,7 +227,6 @@ END;
 
 export async function callTagNameToJobProcedure(inputUserId: number, inputTagName: string): Promise<any[]> {
     try {
-        // 直接调用存储过程并获取结果
         const [results] = await pool.query('CALL TagNameToJob(?, ?)', [inputUserId, inputTagName]);
         
         // MySQL2 returns results as QueryResult type, we need to access the first element
