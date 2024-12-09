@@ -1,26 +1,36 @@
-Backend
+# Backend Documentation
 
-# Models
-路径: /home/unicareer/project/server/src/models
+## Models
+**Path**: `/home/unicareer/project/server/src/models`
 
-# Services
-路径: /home/unicareer/project/server/src/services
+## Services
+**Path**: `/home/unicareer/project/server/src/services`
 
-# Tests
-路径: /home/unicareer/project/server/src/tests
-## 数据库测试 (local)
+## Tests
+**Path**: `/home/unicareer/project/server/src/tests`
+
+### Database Testing (Local)
+
+Run the following command to test the local database:
 
 ```bash
 npm run test:local
 ```
 
-## 数据库测试 (db)
+### Database Testing (db)
+
+Run the following command to test the local database:
 
 ```bash
 npm run test:db
 ```
 
-option1:
-- database.test.ts -> 测试数据库连接
-option2:
-- database.test_copy.ts -> 更复杂和全面的测试
+### Options for Database Tests
+
+Option 1: `database.test.ts`
+
+Tests basic database connections.
+
+Option 2: `database.test_copy.ts`
+
+Includes more complex and comprehensive testing scenarios.
