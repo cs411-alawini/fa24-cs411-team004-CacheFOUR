@@ -1,0 +1,112 @@
+Transaction: First add to the enrollment data and then fetch the corresponding jobs using skill-matching.
+
+export async function transactionEnrollAndFetchJobs(inputUserId: number, crns: string[]): Promise<Job[]> {
+    try {
+        await pool.query('BEGIN');
+
+        await pool.query(
+            `DELETE FROM Enrollment WHERE UserId = ?;`,
+            [inputUserId]
+        );
+
+        for (const crn of crns) {
+            await pool.query(
+                `INSERT INTO Enrollment (UserId, CRN) VALUES (?, ?);`,
+                [inputUserId, crn]
+            );
+        }
+
+        const [rows] = await pool.query<RowDataPacket[]>(
+            `
+            SELECT 
+                J.JobId AS jobId,
+                J.Role AS role,
+                AVG(J.AvgExperience) AS avgExperience,
+                GROUP_CONCAT(DISTINCT J.Qualification) AS qualification,
+                J.Type AS type,
+                ROUND(AVG(J.MinSalary), 2) AS minSalary,
+                ROUND(AVG(J.MaxSalary), 2) AS maxSalary,
+                GROUP_CONCAT(DISTINCT J.CompanyName) AS companyName,
+                J.Preference AS preference,
+                J.Benefits AS benefits
+            FROM AlterTable A
+            JOIN (
+                SELECT DISTINCT SOCode
+                FROM SkillMatching
+                JOIN Enrollment E USING (CRN)
+                WHERE E.UserId = ?
+                GROUP BY SOCode
+                HAVING COUNT(CASE WHEN Skill1 IS NOT NULL AND Skill1 <> '' THEN 1 END) +
+                       COUNT(CASE WHEN Skill2 IS NOT NULL AND Skill2 <> '' THEN 1 END) >= 2
+            ) AS SkillCounts ON A.SOCode = SkillCounts.SOCode
+            JOIN Job J ON J.Role = A.AlterTitle
+            GROUP BY J.JobId, J.Role, J.Type, J.Preference, J.Benefits
+            ORDER BY maxSalary DESC;
+            `,
+            [inputUserId]
+        );
+
+        await pool.query('COMMIT');
+
+        return rows.map(row => ({
+            jobId: row.jobId,
+            role: row.role,
+            avgExperience: row.avgExperience,
+            qualification: row.qualification,
+            minSalary: row.minSalary,
+            maxSalary: row.maxSalary,
+            type: row.type,
+            preference: row.preference,
+            benefits: row.benefits,
+            companyName: row.companyName
+        }));
+    } catch (error) {
+        await pool.query('ROLLBACK');
+        console.error('Error in transactionEnrollAndFetchJobs:', error);
+        throw error;
+    }
+}
+
+Stored Procedure: update the tags in user account and select jobs that are under tag.
+
+export async function initializeTagNameToJobProcedure() {
+    const createProcedureSQL = `
+CREATE PROCEDURE TagNameToJob(
+    IN InputUserId INT,
+    IN InputTagCode VARCHAR(255)
+)
+BEGIN
+
+    UPDATE UserAccount
+    SET TagCode = InputTagCode
+    WHERE UserId = InputUserId;
+
+    SELECT 
+        J.JobId,
+        J.Role,
+        AVG(J.AvgExperience) as AvgExperience,
+        GROUP_CONCAT(DISTINCT J.Qualification SEPARATOR ', ') as Qualification,
+        J.Type,
+        ROUND(AVG(J.MinSalary), 2) as MinSalary,
+        ROUND(AVG(J.MaxSalary), 2) as MaxSalary,
+        GROUP_CONCAT(DISTINCT J.CompanyName SEPARATOR ', ') as CompanyName,
+        J.Preference,
+        J.Benefits
+    FROM Job J
+    JOIN Positions P ON J.Role = P.Role
+    JOIN AlterTable A ON J.Role = A.AlterTitle
+    JOIN UserAccount U ON A.SOCode = U.TagCode
+    WHERE U.UserId = InputUserId
+    GROUP BY J.JobId, J.Role, J.Type, J.Preference, J.Benefits;
+END;
+    `;
+  
+    try {
+        await pool.query('DROP PROCEDURE IF EXISTS TagNameToJob');
+        await pool.query(createProcedureSQL);
+        console.log("Stored procedure 'TagNameToJob' created successfully.");
+    } catch (error) {
+        console.error("Error creating stored procedure 'TagNameToJob':", error);
+        throw error;
+    }
+}
